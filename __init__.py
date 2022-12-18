@@ -1,1 +1,1 @@
-from .src.llimcobe import Llimcobe
+from .src.llimcobe import Llimcobe as LCB

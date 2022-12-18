@@ -14,7 +14,7 @@ class Llimcobe(ABC):
         self.models = {}
         self.dataset = self.prepare_dataset()
         self.lens = list(map(np.size, self.dataset))
-        temp = os.path.join(os.path.abspath(__file__), "..", ".temp")
+        temp = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".temp"))
         if not os.path.exists(temp):
             os.makedirs(temp)
         self.temp = os.path.join(temp, "img")
@@ -33,7 +33,8 @@ class Llimcobe(ABC):
     def set_model(self, name: str, model: Union[None, Callable[[T1], T2]],
                   preprocess: Callable[[np.ndarray], T1],
                   save: Union[Callable[[T1, str], Any], Callable[[T2, str], Any]],
-                  load: Callable[[str], np.ndarray]):
+                  load: Callable[[str], np.ndarray],
+                  compare: Callable[[Union[T1, T2], Union[T1, T2]], bool]):
         """
         This function includes into a dictionary the model.
         If the name exists in models dictionary the model will be overwritten.
@@ -44,10 +45,12 @@ class Llimcobe(ABC):
         :param save: function to save compressed image. If the model is auto-saved,
                     pass the calling function through this variable.
         :param load: function to load the image and transform to np.ndarray image.
+        :param compare: function that compare 2 objects of the same type (preprocess object). Leave empty if == works.
         :return: True if model is included, false if not.
         """
         if (name and model and save and load) or (name and save and load):
-            self.models[name] = {"model": model, "preprocess": preprocess, "save": save, "load": load}
+            self.models[name] = {"model": model, "preprocess": preprocess, "save": save, "load": load,
+                                 "compare": compare if compare else lambda x, y: x == y}
             return True
 
         return False
@@ -102,7 +105,7 @@ class Llimcobe(ABC):
                 elapsed_time2 = time.perf_counter() - start_time
                 pixel_size = loaded.dtype.itemsize * 8
                 loaded = self.models[name]["preprocess"](loaded)
-                if image != loaded and lossy_flag is False:
+                if not self.models[name]["compare"](image, loaded) and lossy_flag is False:
                     warnings.warn("Pre-compressed image and post-decompressed image don't match")
 
                     t1 = Thread(target=image.show)
@@ -116,6 +119,7 @@ class Llimcobe(ABC):
                     lossy_flag = True
 
                 image_size = os.path.getsize(self.temp) * 8
+                os.remove(self.temp)
                 bpsp.append(float(image_size / length))
                 compression_throughput.append(float((length * pixel_size / (8 * 10 ** 6)) / elapsed_time1))
                 decompression_throughput.append(float((image_size / (8 * 10 ** 6)) / elapsed_time2))
@@ -123,6 +127,14 @@ class Llimcobe(ABC):
             all_bpsp[name] = bpsp
             all_throughput[name] = compression_throughput
             all_dthroughput[name] = decompression_throughput
+
+        for ix, name in enumerate(self.models):
+            print('{} model have a compression rate of {}bpsp'.format(name, sum(all_bpsp[name]) / len(all_bpsp[name])))
+            print('{} model have a compression throughput of {}MB/s'.format(name, sum(all_throughput[name]) /
+                                                                            len(all_throughput[name])))
+            print('{} model have a decompression throughput of {}MB/s'.format(name, sum(all_dthroughput[name]) /
+                                                                              len(all_dthroughput[name])))
+
 
         for name in self.models:
             all_bpsp[name].sort()
@@ -153,6 +165,7 @@ class Llimcobe(ABC):
             axs[1, 1].scatter(sum(all_bpsp[name]) / len(all_bpsp[name]),
                               sum(all_throughput[name]) / len(all_throughput[name]), label=name,
                               marker=markers[ix % len(markers)])
+
         axs[1, 1].legend()
         axs[1, 1].set(xlabel="Compression Rate [bpsp]", ylabel="Compression Throughput [MB/s]", ylim=0, xlim=0)
 
