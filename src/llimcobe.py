@@ -7,7 +7,6 @@ import os
 import warnings
 from threading import Thread
 
-
 class Llimcobe(ABC):
     def __init__(self):
         super().__init__()
@@ -18,12 +17,14 @@ class Llimcobe(ABC):
         if not os.path.exists(temp):
             os.makedirs(temp)
         self.temp = os.path.join(temp, "img")
+        if os.path.exists(self.temp):
+            os.remove(self.temp)
 
     @abstractmethod
     def prepare_dataset(self):
         """
         This abstract method will be used to prepare dataset.
-        :return: A list of images in NxMx3 numpy.ndarray format.
+        :return: A list of images in HxWxC numpy.ndarray format.
         """
         pass
 
@@ -108,21 +109,24 @@ class Llimcobe(ABC):
                 if not self.models[name]["compare"](image, loaded) and lossy_flag is False:
                     warnings.warn("Pre-compressed image and post-decompressed image don't match")
 
-                    t1 = Thread(target=image.show)
-                    t1.start()
+                    try:
+                        t1 = Thread(target=image.show)
+                        t1.start()
 
-                    t2 = Thread(target=loaded.show)
-                    t2.start()
+                        t2 = Thread(target=loaded.show)
+                        t2.start()
 
-                    t1.join()
-                    t2.join()
+                        t1.join()
+                        t2.join()
+                    except:
+                        pass
                     lossy_flag = True
 
                 image_size = os.path.getsize(self.temp) * 8
                 os.remove(self.temp)
                 bpsp.append(float(image_size / length))
                 compression_throughput.append(float((length * pixel_size / (8 * 10 ** 6)) / elapsed_time1))
-                decompression_throughput.append(float((image_size / (8 * 10 ** 6)) / elapsed_time2))
+                decompression_throughput.append(float((length * pixel_size / (8 * 10 ** 6)) / elapsed_time2))
 
             all_bpsp[name] = bpsp
             all_throughput[name] = compression_throughput
@@ -167,14 +171,16 @@ class Llimcobe(ABC):
                               marker=markers[ix % len(markers)])
 
         axs[1, 1].legend()
-        axs[1, 1].set(xlabel="Compression Rate [bpsp]", ylabel="Compression Throughput [MB/s]", ylim=0, xlim=0)
+        axs[1, 1].set(xlabel="Compression Rate [bpsp]", ylabel="Compression Throughput [MB/s]", ylim=0.01, xlim=0,
+                      yscale="log")
 
         for ix, name in enumerate(self.models):
             axs[1, 2].scatter(sum(all_bpsp[name]) / len(all_bpsp[name]),
                               sum(all_dthroughput[name]) / len(all_dthroughput[name]), label=name,
                               marker=markers[ix % len(markers)])
         axs[1, 2].legend()
-        axs[1, 2].set(xlabel="Compression Rate [bpsp]", ylabel="Decompression Throughput [MB/s]", ylim=0, xlim=0)
+        axs[1, 2].set(xlabel="Compression Rate [bpsp]", ylabel="Decompression Throughput [MB/s]", ylim=0.01, xlim=0,
+                      yscale="log")
 
         # fig.suptitle("Benchmark")
         plt.show()
