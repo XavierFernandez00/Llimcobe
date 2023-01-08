@@ -152,14 +152,14 @@ class Llimcobe(ABC):
             compression_throughput = all_throughput[name]
             axs[0, 1].plot(compression_throughput, label=name)
         axs[0, 1].legend()
-        axs[0, 1].set(xlabel="Sorted Images Index", ylabel="Compression Throughput [MB/s]")
+        axs[0, 1].set(xlabel="Sorted Images Index", ylabel="Compression Throughput [MB/s]", ylim=0.01, yscale="log")
 
         for name in self.models:
             all_dthroughput[name].sort()
             decompression_throughput = all_dthroughput[name]
             axs[0, 2].plot(decompression_throughput, label=name)
         axs[0, 2].legend()
-        axs[0, 2].set(xlabel="Sorted Images Index", ylabel="Decompression Throughput [MB/s]")
+        axs[0, 2].set(xlabel="Sorted Images Index", ylabel="Decompression Throughput [MB/s]", ylim=0.01, yscale="log")
 
         markers = ['o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h', 'H', 'D', 'd', 'P', 'X']
 
