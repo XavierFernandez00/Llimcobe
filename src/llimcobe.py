@@ -1,13 +1,17 @@
+import os
+import time
+from threading import Thread
+import warnings
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 from typing import Callable, Any, TypeVar, Union
-import os
-import warnings
-from threading import Thread
+
 
 class Llimcobe(ABC):
+    """
+    A class used to make a lossless image benchmark with some models.
+    """
     def __init__(self):
         super().__init__()
         self.models = {}
@@ -80,6 +84,11 @@ class Llimcobe(ABC):
         return False
 
     def benchmark(self, num_images: int):
+        """
+        This function will create the benchmark and will display a graphs with the results.
+        :param num_images: number of images that will be used from dataset for benchmark.
+        :return: None
+        """
 
         fig, axs = plt.subplots(2, 3)
         all_bpsp = {}
@@ -182,5 +191,4 @@ class Llimcobe(ABC):
         axs[1, 2].set(xlabel="Compression Rate [bpsp]", ylabel="Decompression Throughput [MB/s]", ylim=0.01, xlim=0,
                       yscale="log")
 
-        # fig.suptitle("Benchmark")
         plt.show()
