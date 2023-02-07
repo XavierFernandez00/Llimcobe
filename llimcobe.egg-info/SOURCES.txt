@@ -3,6 +3,7 @@ setup.py
 llimcobe.egg-info/PKG-INFO
 llimcobe.egg-info/SOURCES.txt
 llimcobe.egg-info/dependency_links.txt
+llimcobe.egg-info/requires.txt
 llimcobe.egg-info/top_level.txt
 src/__init__.py
 src/llimcobe.py
