@@ -1,4 +1,4 @@
-from src.llimcobe import Llimcobe as LCB
+from llimcobe.llimcobe import Llimcobe as LCB
 import numpy as np
 
 
